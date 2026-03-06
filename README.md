@@ -10,7 +10,7 @@ Un'applicazione desktop per esplorare proverbi italiani e frasi latine.
 - 🎯 Interfaccia intuitiva con tab dinamiche
 
 ## 📸 Screenshot
-[Qui metterai le immagini]
+![Dashboard](assets/Screen-01.png)
 
 ## 🚀 Download
 [Link al file .exe]
