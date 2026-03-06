@@ -13,7 +13,7 @@ Un'applicazione desktop per esplorare proverbi italiani e frasi latine.
 ![Dashboard](assets/Screen-01.png)
 
 ## 🚀 Download
-[Link al file .exe]
+<a href="https://github.com/Seconet/Proverbi_Italiani/blob/main/ProverbiItaliani.zip" target="_blank">[Link al file .exe]</a>
 
 ## 📜 Licenza
 Freeware - Gratuito per uso personale
