@@ -14,7 +14,7 @@ Un'applicazione desktop per esplorare proverbi italiani, frasi latine e greco an
 ## 📊 Analisi Proverbi
 
 - <a href="https://nbviewer.org/github/Seconet/Proverbi_Italiani/blob/main/analisi_proverbi.ipynb" target="_blank"> nbviewer.org </a>
-- [Versione HTML statica](analisi_proverbi.html) 
+- [Versione HTML statica](analisi_proverbi.html) --> to do
 ## 📸 Screenshot
 ![Dashboard](assets/screen02.png)
 
