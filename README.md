@@ -13,9 +13,8 @@ Un'applicazione desktop per esplorare proverbi italiani, frasi latine e greco an
  
 ## 📊 Analisi Proverbi
 
-- [Notebook interattivo (.ipynb)](analisi_proverbi.ipynb) - *se GitHub non lo renderizza, usa [NBViewer]([https://nbviewer.org](https://nbviewer.org/github/Seconet/Proverbi_Italiani/blob/main/analisi_proverbi.ipynb))*
-- [Versione HTML statica](analisi_proverbi.html) - *visualizzazione garantita*
-
+- <a href="https://nbviewer.org/github/Seconet/Proverbi_Italiani/blob/main/analisi_proverbi.ipynb" target="_blank"> nbviewer.org </a>
+- [Versione HTML statica](analisi_proverbi.html) 
 ## 📸 Screenshot
 ![Dashboard](assets/screen02.png)
 
