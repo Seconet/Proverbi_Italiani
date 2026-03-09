@@ -1,13 +1,15 @@
 # Proverbi_Italiani
-Un'applicazione desktop per esplorare proverbi italiani e frasi latine.
+Un'applicazione desktop per esplorare proverbi italiani, frasi latine e greco antico
 
 ## ✨ Caratteristiche
 - 🔍 Ricerca per tema in italiano e latino
 - 📖 Visualizzazione completa di tutte le frasi
 - ➕ Aggiunta nuovi proverbi
 - ➕ Aggiunta nuove frasi latine e traduzioni
-- 🏛️ Database separati per italiano e latino
+- ➕ Aggiunta nuove frasi Greco antico e traduzioni
+- 🏛️ Database separati per italiano latino e greco
 - 🎯 Interfaccia intuitiva con tab dinamiche
+- 🗄️ Importazione da csv
 
 ## 📸 Screenshot
 ![Dashboard](assets/Screen-01.png)
