@@ -12,7 +12,7 @@ Un'applicazione desktop per esplorare proverbi italiani, frasi latine e greco an
 - 🗄️ Importazione da csv
 
 ## 📸 Screenshot
-![Dashboard](assets/Screen-01.png)
+![Dashboard](assets/screen02.png)
 
 ## 🚀 Download
 <a href="https://github.com/Seconet/Proverbi_Italiani/blob/main/ProverbiItaliani.zip" target="_blank">[Link al file .exe]</a>
