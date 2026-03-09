@@ -1,4 +1,4 @@
-# Proverbi_Italiani
+# Proverbi Italiani Frasi Latino e Greco antico
 Un'applicazione desktop per esplorare proverbi italiani, frasi latine e greco antico
 
 ## ✨ Caratteristiche
