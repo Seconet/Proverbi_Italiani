@@ -8,6 +8,13 @@ from tkinter import ttk, messagebox
 import database as db
 import ui_utils as ui
 
+import re
+from collections import Counter
+import matplotlib
+matplotlib.use("TkAgg")
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+
 
 class PannelloGreco(tk.Frame):
     """Frame principale con notebook a 3 tab per le Frasi Greco Antico."""
@@ -28,15 +35,231 @@ class PannelloGreco(tk.Frame):
         self.tab_ins = tk.Frame(self.nb, bg=ui.COLORS["bg"])
         self.tab_cat = tk.Frame(self.nb, bg=ui.COLORS["bg"])
         self.tab_ric = tk.Frame(self.nb, bg=ui.COLORS["bg"])
+        self.tab_ana  = tk.Frame(self.nb, bg=ui.COLORS["bg"])
 
         self.nb.add(self.tab_ins, text="  ✏️  Inserisci  ")
         self.nb.add(self.tab_cat, text="  📂  Categorie  ")
         self.nb.add(self.tab_ric, text="  🔍  Ricerca  ")
+        self.nb.add(self.tab_ana, text="  🔬  Analisi  ")
 
         self._build_inserisci()
         self._build_categorie()
         self._build_ricerca()
+        self._build_analisi()
 
+
+    # ─────────────────────────────────────────
+    # TAB ANALISI
+    # ─────────────────────────────────────────    
+    def _build_analisi(self):
+        f = self.tab_ana
+        ui.section_title(f, "Analisi & Statistiche Frasi Greco antico", "green")
+
+        top = tk.Frame(f, bg=ui.COLORS["bg"])
+        top.pack(fill="x", padx=20, pady=(8, 4))
+        ui.btn(top, "  🔄  Aggiorna", self._aggiorna_analisi, color="green").pack(side="left")
+        self.ana_info = tk.Label(top, text="",
+                                 bg=ui.COLORS["bg"], fg=ui.COLORS["fg_dim"],
+                                 font=ui.FONTS["small"])
+        self.ana_info.pack(side="left", padx=16)
+
+        # Scroll container
+        outer = tk.Canvas(f, bg=ui.COLORS["bg"], highlightthickness=0)
+        sb = ttk.Scrollbar(f, orient="vertical", command=outer.yview)
+        outer.configure(yscrollcommand=sb.set)
+        sb.pack(side="right", fill="y")
+        outer.pack(fill="both", expand=True, padx=(20, 0), pady=(0, 10))
+
+        self.ana_frame = tk.Frame(outer, bg=ui.COLORS["bg"])
+        self._ana_win_id = outer.create_window((0, 0), window=self.ana_frame, anchor="nw")
+
+        outer.bind("<Configure>",
+                   lambda e: outer.itemconfig(self._ana_win_id, width=e.width))
+        self.ana_frame.bind("<Configure>",
+                            lambda e: outer.configure(scrollregion=outer.bbox("all")))
+        outer.bind("<MouseWheel>",
+                   lambda e: outer.yview_scroll(-1 * (e.delta // 120), "units"))
+
+        self._aggiorna_analisi()
+
+    def _aggiorna_analisi(self):
+        for w in self.ana_frame.winfo_children():
+            w.destroy()
+
+        frasi= db.get_frasi_greco()
+        if not frasi:
+            tk.Label(self.ana_frame, text="Nessuna frase presente.",
+                     bg=ui.COLORS["bg"], fg=ui.COLORS["fg_dim"],
+                     font=ui.FONTS["body"]).pack(padx=20, pady=40)
+            return
+
+        self.ana_info.config(text=f"Basato su {len(frasi)} frasi")
+
+        STOPWORDS = {
+            "il","lo","la","i","gli","le","un","uno","una","di","a","da","in",
+            "con","su","per","tra","fra","e","o","ma","se","che","chi","non",
+            "è","si","ci","vi","ne","del","della","dello","dei","degli","delle",
+            "al","alla","allo","ai","agli","alle","dal","dalla","nel","nella",
+            "col","sui","sul","sulla","sulle","come","più","mai","però","anche",
+            "tutto","tutti","tutte","c'è","c'","l'","d'","s'","n'","m'"
+        }
+
+        # Dati
+        lunghezze  = [len(p[1]) for p in frasi]
+        parole_tot = sum(len(p[1].split()) for p in frasi)
+        con_sig    = sum(1 for p in frasi if p[2])
+        cats       = db.get_cat_greco_stats()
+        n_cat_use  = sum(1 for c in cats if c[2] > 0)
+        cat_data   = sorted([(c[1], c[2]) for c in cats if c[2] > 0],
+                            key=lambda x: x[1], reverse=True)
+
+        tutti_testi   = " ".join(p[1].lower() for p in frasi)
+        parole        = re.findall(r"[a-zàèéìòù']{3,}", tutti_testi)
+        parole_fil    = [w for w in parole if w not in STOPWORDS]
+        freq          = Counter(parole_fil).most_common(12)
+
+        unici      = list({p[0]: p for p in frasi}.values())
+        piu_lunghi = sorted(unici, key=lambda p: len(p[1]), reverse=True)[:5]
+        piu_corti  = sorted(unici, key=lambda p: len(p[1]))[:5]
+
+        # ── KPI ───────────────────────────────────────────────────────────
+        self._ana_section("📊 Riepilogo generale")
+        kpi = [
+            ("Totale frasi",     str(len(frasi))),
+            ("Categorie usate",     f"{n_cat_use} / {len(cats)}"),
+            ("Parole totali",       str(parole_tot)),
+            ("Con spiegazione",     f"{con_sig} ({100*con_sig//len(frasi)}%)"),
+            ("Lunghezza media",     f"{sum(lunghezze)//len(lunghezze)} car."),
+            ("Frase più lunga", f"{max(lunghezze)} car."),
+        ]
+        self._ana_kpi_grid(kpi)
+
+        # ── GRAFICO 1: Categorie ──────────────────────────────────────────
+        self._ana_section("📂 Distribuzione per categoria")
+        if cat_data:
+            nomi  = [x[0] for x in cat_data]
+            valori = [x[1] for x in cat_data]
+            palette = plt.cm.get_cmap("coolwarm", len(nomi))
+            colors  = [palette(i) for i in range(len(nomi))]
+
+            fig, ax = plt.subplots(figsize=(8, max(2.5, len(nomi) * 0.55)))
+            fig.patch.set_facecolor("#2A2A3E")
+            ax.set_facecolor("#2A2A3E")
+            bars = ax.barh(nomi, valori, color=colors, height=0.6)
+            ax.bar_label(bars, fmt="%d", padding=4,
+                         color="#CDD6F4", fontsize=9)
+            ax.set_xlabel("Numero proverbi", color="#6C7086", fontsize=9)
+            ax.tick_params(colors="#CDD6F4", labelsize=9)
+            ax.spines[:].set_color("#45475A")
+            ax.xaxis.label.set_color("#6C7086")
+            for spine in ax.spines.values():
+                spine.set_edgecolor("#45475A")
+            ax.invert_yaxis()
+            fig.tight_layout()
+            self._embed_figure(fig)
+
+        # ── GRAFICO 2: Word frequency ─────────────────────────────────────
+        self._ana_section("🔤 Parole più frequenti")
+        if freq:
+            parole_l = [x[0] for x in freq]
+            conti    = [x[1] for x in freq]
+            cmap     = plt.cm.get_cmap("viridis", len(parole_l))
+            colors2  = [cmap(i) for i in range(len(parole_l))]
+
+            fig2, ax2 = plt.subplots(figsize=(8, max(2.5, len(parole_l) * 0.45)))
+            fig2.patch.set_facecolor("#2A2A3E")
+            ax2.set_facecolor("#2A2A3E")
+            bars2 = ax2.barh(parole_l, conti, color=colors2, height=0.6)
+            ax2.bar_label(bars2, fmt="%d", padding=4,
+                          color="#CDD6F4", fontsize=9)
+            ax2.tick_params(colors="#CDD6F4", labelsize=9)
+            for spine in ax2.spines.values():
+                spine.set_edgecolor("#45475A")
+            ax2.invert_yaxis()
+            fig2.tight_layout()
+            self._embed_figure(fig2)
+
+        # ── GRAFICO 3: Distribuzione lunghezze ────────────────────────────
+        self._ana_section("📏 Distribuzione lunghezza Frasi")
+        fig3, ax3 = plt.subplots(figsize=(8, 3))
+        fig3.patch.set_facecolor("#2A2A3E")
+        ax3.set_facecolor("#2A2A3E")
+        ax3.hist(lunghezze, bins=min(15, len(set(lunghezze))),
+                 color="#CBA6F7", edgecolor="#1E1E2E", linewidth=0.6)
+        ax3.set_xlabel("Lunghezza in caratteri", color="#6C7086", fontsize=9)
+        ax3.set_ylabel("Numero frasi",        color="#6C7086", fontsize=9)
+        ax3.tick_params(colors="#CDD6F4", labelsize=9)
+        for spine in ax3.spines.values():
+            spine.set_edgecolor("#45475A")
+        # linea media
+        media = sum(lunghezze) / len(lunghezze)
+        ax3.axvline(media, color="#F9E2AF", linestyle="--", linewidth=1.2,
+                    label=f"Media: {media:.0f} car.")
+        ax3.legend(facecolor="#313244", edgecolor="#45475A",
+                   labelcolor="#CDD6F4", fontsize=9)
+        fig3.tight_layout()
+        self._embed_figure(fig3)
+
+        # ── LISTA: più lunghi / più corti ─────────────────────────────────
+        self._ana_section("📏 Frasi più lunghe")
+        self._ana_lista_latino(piu_lunghi)
+        self._ana_section("🤏 Frasi più corte")
+        self._ana_lista_latino(piu_corti)
+
+    # ── HELPER ────────────────────────────────────────────────────────────
+
+    def _embed_figure(self, fig):
+        """Incorpora una figura matplotlib nel frame di analisi."""
+        canvas = FigureCanvasTkAgg(fig, master=self.ana_frame)
+        canvas.draw()
+        widget = canvas.get_tk_widget()
+        widget.configure(bg=ui.COLORS["bg_card"],
+                         highlightthickness=1,
+                         highlightbackground=ui.COLORS["border"])
+        widget.pack(fill="x", padx=4, pady=(0, 8))
+        plt.close(fig)
+
+    def _ana_section(self, titolo):
+        f = tk.Frame(self.ana_frame, bg=ui.COLORS["bg"])
+        f.pack(fill="x", padx=4, pady=(18, 6))
+        tk.Label(f, text=titolo, bg=ui.COLORS["bg"],
+                 fg=ui.COLORS["yellow"], font=ui.FONTS["title"]).pack(anchor="w")
+        tk.Frame(f, bg=ui.COLORS["border"], height=1).pack(fill="x", pady=(4, 0))
+
+    def _ana_kpi_grid(self, kpi_list):
+        grid = tk.Frame(self.ana_frame, bg=ui.COLORS["bg"])
+        grid.pack(fill="x", padx=4, pady=(0, 8))
+        for i, (label, value) in enumerate(kpi_list):
+            card = tk.Frame(grid, bg=ui.COLORS["bg_card"],
+                            highlightthickness=1,
+                            highlightbackground=ui.COLORS["border"])
+            card.grid(row=i // 3, column=i % 3, padx=6, pady=6, sticky="nsew")
+            grid.columnconfigure(i % 3, weight=1)
+            tk.Label(card, text=value, bg=ui.COLORS["bg_card"],
+                     fg=ui.COLORS["purple"],
+                     font=("Segoe UI", 18, "bold")).pack(pady=(14, 2))
+            tk.Label(card, text=label, bg=ui.COLORS["bg_card"],
+                     fg=ui.COLORS["fg_dim"],
+                     font=ui.FONTS["small"]).pack(pady=(0, 14))
+
+    def _ana_lista_latino(self, frase):
+        frame = tk.Frame(self.ana_frame, bg=ui.COLORS["bg_card"],
+                         highlightthickness=1,
+                         highlightbackground=ui.COLORS["border"])
+        frame.pack(fill="x", padx=4, pady=(0, 4))
+        for p in frase:
+            row = tk.Frame(frame, bg=ui.COLORS["bg_card"])
+            row.pack(fill="x", padx=12, pady=5)
+            tk.Label(row, text=f"{len(p[1])} car.",
+                     bg=ui.COLORS["bg_card"], fg=ui.COLORS["teal"],
+                     font=("Segoe UI", 9, "bold"), width=8, anchor="w").pack(side="left")
+            tk.Label(row,
+                     text=p[1][:85] + ("…" if len(p[1]) > 85 else ""),
+                     bg=ui.COLORS["bg_card"], fg=ui.COLORS["fg"],
+                     font=ui.FONTS["small"], anchor="w").pack(side="left", fill="x", expand=True)
+            tk.Label(row, text=p[3] or "—",
+                     bg=ui.COLORS["bg_card"], fg=ui.COLORS["fg_dim"],
+                     font=ui.FONTS["small"], anchor="e").pack(side="right")
     # ─────────────────────────────────────────
     # TAB INSERISCI
     # ─────────────────────────────────────────

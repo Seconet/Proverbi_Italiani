@@ -29,7 +29,7 @@ def init_db():
     c.execute("""
         CREATE TABLE IF NOT EXISTS proverbi (
             id           INTEGER PRIMARY KEY AUTOINCREMENT,
-            testo        TEXT NOT NULL,
+            testo        TEXT NOT NULL UNIQUE,
             significato  TEXT,
             categoria_id INTEGER,
             data_ins     TEXT DEFAULT (datetime('now','localtime')),
@@ -49,7 +49,7 @@ def init_db():
     c.execute("""
         CREATE TABLE IF NOT EXISTS frasi_latino (
             id           INTEGER PRIMARY KEY AUTOINCREMENT,
-            testo        TEXT NOT NULL,
+            testo        TEXT NOT NULL UNIQUE,
             traduzione   TEXT,
             significato  TEXT,
             autore       TEXT,
@@ -119,7 +119,7 @@ def init_db():
     c.execute("""
         CREATE TABLE IF NOT EXISTS frasi_greco (
             id           INTEGER PRIMARY KEY AUTOINCREMENT,
-            testo        TEXT NOT NULL,
+            testo            TEXT NOT NULL UNIQUE,
             traslitterazione TEXT,
             traduzione   TEXT,
             significato  TEXT,
