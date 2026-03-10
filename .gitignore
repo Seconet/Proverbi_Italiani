@@ -172,3 +172,5 @@ pyrightconfig.json
 
 #local database
 *.db
+#import
+*.csv
