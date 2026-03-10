@@ -10,6 +10,7 @@ Un'applicazione desktop per esplorare proverbi italiani, frasi latine e greco an
 - 🏛️ Database separati per italiano latino e greco
 - 🎯 Interfaccia intuitiva con tab dinamiche
 - 🗄️ Importazione da csv
+- 🔬  Analisi ML
  
 ## 📊 Analisi Proverbi
 
